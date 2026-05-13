@@ -1,0 +1,25 @@
+# 環境變數（包含 API 金鑰，絕對不能上傳）
+.env
+
+# Python 虛擬環境
+venv/
+env/
+.venv/
+
+# Python 快取
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE 設定檔
+.vscode/
+.idea/
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+
+# 未來可能會有的機密設定檔
+secrets.yaml
+credentials.json
