@@ -12,14 +12,9 @@ load_dotenv()
 OWM_KEY = os.getenv("OPENWEATHER_API_KEY")       # OpenWeatherMap 2.5 API Key
 LLM_KEY = os.getenv("LLM_API_KEY")                # 智譜 AI API Key
 TELE_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-<<<<<<< HEAD
 CHAT_IDS = os.getenv("TELEGRAM_CHAT_IDS", "").split(",")
 CHAT_IDS = [cid.strip() for cid in CHAT_IDS if cid.strip()]
 CITY = "HongKong"                                 # 預設城市
-=======
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-CITY = "HongKong"                # 預設城市
->>>>>>> 2d853f8ca621e132deb27645034ed5c9659f5cb8
 
 # 初始化智譜客戶端（只做一次）
 zhipu_client = ZhipuAI(api_key=LLM_KEY)
