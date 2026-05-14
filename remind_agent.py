@@ -13,7 +13,7 @@ OWM_KEY = os.getenv("OPENWEATHER_API_KEY")       # OpenWeatherMap 2.5 API Key
 LLM_KEY = os.getenv("LLM_API_KEY")                # 智譜 AI API Key
 TELE_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-CITY = os.getenv("CITY", "HongKong")                # 預設城市
+CITY ="HongKong"           # 預設城市
 
 # 初始化智譜客戶端（只做一次）
 zhipu_client = ZhipuAI(api_key=LLM_KEY)
