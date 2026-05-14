@@ -12,13 +12,15 @@ load_dotenv()
 OWM_KEY = os.getenv("OPENWEATHER_API_KEY")       # OpenWeatherMap 2.5 API Key
 LLM_KEY = os.getenv("LLM_API_KEY")                # 智譜 AI API Key
 TELE_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-CITY ="HongKong"           # 預設城市
+CHAT_IDS = os.getenv("TELEGRAM_CHAT_IDS", "").split(",")
+CHAT_IDS = [cid.strip() for cid in CHAT_IDS if cid.strip()]
+CITY = "HongKong"                                 # 預設城市
 
 # 初始化智譜客戶端（只做一次）
 zhipu_client = ZhipuAI(api_key=LLM_KEY)
 
-# 1. 獲取天氣數據（OpenWeatherMap 2.5 免費方案）
+from datetime import datetime, timezone, timedelta
+
 def get_weather():
     url = f"http://api.openweathermap.org/data/2.5/forecast?q={CITY}&appid={OWM_KEY}&units=metric&lang=zh_cn"
     res = requests.get(url)
@@ -28,10 +30,18 @@ def get_weather():
         error_msg = data.get("message", "Unknown error")
         raise Exception(f"OpenWeatherMap API 錯誤: {error_msg}")
 
-    first_dt = data["list"][0]["dt_txt"]
-    today = first_dt.split(" ")[0]
+    # 香港時間 (UTC+8) 的今天日期
+    hk_tz = timezone(timedelta(hours=8))
+    hk_now = datetime.now(hk_tz)
+    hk_today_str = hk_now.strftime("%Y-%m-%d")
 
-    today_items = [item for item in data["list"] if item["dt_txt"].startswith(today)]
+    # 篩選香港今天的時段
+    today_items = [item for item in data["list"] if item["dt_txt"].startswith(hk_today_str)]
+
+    # 備援：若在香港跨日後 UTC 未跨日，改用 API 的第一筆日期
+    if not today_items:
+        fallback_date = data["list"][0]["dt_txt"].split(" ")[0]
+        today_items = [item for item in data["list"] if item["dt_txt"].startswith(fallback_date)]
 
     if not today_items:
         raise Exception("今日無天氣數據")
@@ -46,13 +56,13 @@ def get_weather():
 
     return {
         "city": CITY,
-        "date": today,
+        "date": hk_today_str,
         "temp_min": min(temps),
         "temp_max": max(temps),
         "feels_like_now": feels_likes[0],
         "humidity_avg": sum(humidities) // len(humidities),
         "weather_desc": most_common_desc,
-        "pop_max": max(pops) * 100,  # 百分比
+        "pop_max": max(pops) * 100,
         "uvi": "無資料（API 未提供）"
     }
 
@@ -75,10 +85,15 @@ def generate_advice(weather):
     )
     return response.choices[0].message.content
 
-# 3. 發送 Telegram 訊息
+# 3. 發送 Telegram 訊息（支援多用戶）
 async def send_telegram(message):
     bot = Bot(token=TELE_TOKEN)
-    await bot.send_message(chat_id=CHAT_ID, text=message)
+    for cid in CHAT_IDS:
+        try:
+            await bot.send_message(chat_id=cid, text=message)
+            print(f"已發送給 {cid}")
+        except Exception as e:
+            print(f"發送給 {cid} 失敗: {e}")
 
 async def main():
     try:
@@ -86,10 +101,11 @@ async def main():
         advice = generate_advice(weather)
         full_msg = f"☀️ WeatherMind 早晨提醒\n{advice}"
         await send_telegram(full_msg)
-        print("天氣提醒已發送！")
+        print("所有天氣提醒已發送！")
     except Exception as e:
         error_msg = f"⚠️ WeatherMind 執行失敗: {str(e)}"
         print(error_msg)
+        # 錯誤發生時也嘗試通知所有用戶
         await send_telegram(error_msg)
 
 if __name__ == "__main__":
