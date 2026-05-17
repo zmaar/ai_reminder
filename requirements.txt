@@ -1,5 +1,9 @@
 requests
 zhipuai
+langchain
+langchain-core
+langchain-community
 python-telegram-bot
 python-dotenv
 sniffio
+pytz
